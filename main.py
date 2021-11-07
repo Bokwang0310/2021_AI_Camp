@@ -8,21 +8,20 @@ face_detection = cv2.CascadeClassifier('files/haarcascade_frontalface_default.xm
 emotion_classifier = load_model('files/emotion_model.hdf5', compile=False)
 EMOTIONS = ["Angry", "Disgusting", "Fearful", "Happy", "Sad", "Surprising", "Neutral"]
 
-movie_genre_list = ["Happy", "Sad"]
-genre = movie_genre_list[0]  # 장르 설정
-
-i = 0
+score = 0
+count = 0
 
 emotion_value_list = {
-    "angry": 0,
-    "disgusting": 0,
-    "fearful": 0,
-    "happy": 0,
-    "sad": 0,
-    "surprising": 0,
-    "neutral": 0,
+    "Angry": 0,
+    "Disgusting": 0,
+    "Fearful": 0,
+    "Happy": 0,
+    "Sad": 0,
+    "Surprising": 0,
+    "Neutral": 0,
 }
 
+emotion_score = {"Angry": 5, "Disgusting": 0, "Fearful": 5, "Happy": 5, "Sad": 5, "Neutral": 0, "Surprising": 5}
 camera = cv2.VideoCapture(0)
 
 while True:
@@ -62,7 +61,6 @@ while True:
         cv2.putText(frame, label, (fX, fY - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 255), 2)
         cv2.rectangle(frame, (fX, fY), (fX + fW, fY + fH), (0, 0, 255), 2)
 
-        # print("==========")
         for (i, (emotion, prob)) in enumerate(zip(EMOTIONS, preds)):
 
             text = "{}: {:.2f}%".format(emotion, prob * 100)
@@ -72,28 +70,19 @@ while True:
             cv2.putText(canvas, text, (10, (i * 35) + 23),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 2)
 
-            # print(f"emotion: {emotion}, prob: {prob}, w: {w}")
-            # print("==========")
+            if emotion == "Neutral":
+                if w > 300 and count % 2 == 0:
+                    score += emotion_score[emotion]
+                    count += 1
+            else:
+                if emotion in emotion_score and w > 25:
+                    score += emotion_score[emotion]
+                    count += 1
 
-            current_emotion = ""
+            print(f"emotion: {emotion}, prob: {prob}, w: {w}")
+            print(score)
 
-            if emotion == "Angry":
-                current_emotion = "angry"
-            # elif emotion == "Disgusting":
-            #   current_emotion = "disgusting"
-            elif emotion == "Fearful":
-                current_emotion = "fearful"
-            elif emotion == "Happy":
-                current_emotion = "happy"
-            elif emotion == "Sad":
-                current_emotion = "sad"
-            elif emotion == "Surprising":
-                current_emotion = "surprising"
-            # elif emotion == "Neutral":
-            #   current_emotion = "neutral"
-
-            if not current_emotion == "":
-                emotion_value_list[current_emotion] += prob * 100
+            emotion_value_list[emotion] += prob * 100
 
     cv2.imshow('Emotion Recognition', frame)
     cv2.imshow("Probabilities", canvas)
@@ -105,15 +94,17 @@ cv2.destroyAllWindows()
 
 most_emotion = max(emotion_value_list, key=emotion_value_list.get)
 
-for k, v in emotion_value_list.items():
-    emotion_value_list[k] = round(emotion_value_list[k] / i, 2)
+percentage_list = {}
 
-print(emotion_value_list)
+for k, v in emotion_value_list.items():
+    percentage_list[k] = round(emotion_value_list[k] / i, 2)
+
+print(percentage_list)
 print(f"Max Value: {most_emotion}")
 
 
-def make_result_text(inner_result_text, max_emotion_text):
-    result_image = np.full((300, 300, 3), (255, 255, 255), np.uint8)
+def make_result_text(inner_result_text, max_emotion_text, movie_score):
+    result_image = np.full((330, 310, 3), (255, 255, 255), np.uint8)
 
     y0, dy = 50, 30
 
@@ -122,6 +113,7 @@ def make_result_text(inner_result_text, max_emotion_text):
         cv2.putText(result_image, line, (50, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 1, cv2.LINE_AA)
 
     cv2.putText(result_image, max_emotion_text, (50, 230), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 1, cv2.LINE_AA)
+    cv2.putText(result_image, f"Score: {movie_score}", (50, 260), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 1, cv2.LINE_AA)
 
     while True:
         cv2.imshow("result", result_image)
@@ -134,8 +126,11 @@ def make_result_text(inner_result_text, max_emotion_text):
             continue
 
 
-result_text = f"Angry: {emotion_value_list['angry']} \nFearful: {emotion_value_list['fearful']} \nHappy: {emotion_value_list['happy']}\n Sad: {emotion_value_list['sad']} \nSurprising: {emotion_value_list['surprising']}"
+result_text = f"Angry: {percentage_list['Angry']} \nFearful: {percentage_list['Fearful']} \nHappy: {percentage_list['Happy']}\n Sad: {percentage_list['Sad']} \nSurprising: {percentage_list['Surprising']} \nBoring: {percentage_list['Neutral']}"
 
-make_result_text(result_text, f"Max Emotion: {most_emotion}")
+make_result_text(result_text, f"Max Emotion: {most_emotion}", round(score / count, 1))
 
 cv2.destroyAllWindows()
+
+print(f"Total Score: {score}, Total Count: {count}")
+print(f"Final Score: {round(score / count, 1)}")
