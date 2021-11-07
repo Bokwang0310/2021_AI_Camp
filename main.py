@@ -101,6 +101,8 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
+cv2.destroyAllWindows()
+
 most_emotion = max(emotion_value_list, key=emotion_value_list.get)
 
 for k, v in emotion_value_list.items():
@@ -115,16 +117,25 @@ def make_result_text(inner_result_text, max_emotion_text):
 
     y0, dy = 50, 30
 
-    for k, line in enumerate(inner_result_text.split("\n")):
-        y = y0 + k*dy
+    for ii, line in enumerate(inner_result_text.split("\n")):
+        y = y0 + ii*dy
         cv2.putText(result_image, line, (50, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 1, cv2.LINE_AA)
 
     cv2.putText(result_image, max_emotion_text, (50, 230), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 1, cv2.LINE_AA)
 
-    cv2.imshow("result", result_image)
-    cv2.waitKey()
+    while True:
+        cv2.imshow("result", result_image)
+        key = cv2.waitKey(33)
+
+        # detect q
+        if key == 113:
+            break
+        else:
+            continue
 
 
 result_text = f"Angry: {emotion_value_list['angry']} \nFearful: {emotion_value_list['fearful']} \nHappy: {emotion_value_list['happy']}\n Sad: {emotion_value_list['sad']} \nSurprising: {emotion_value_list['surprising']}"
 
 make_result_text(result_text, f"Max Emotion: {most_emotion}")
+
+cv2.destroyAllWindows()
