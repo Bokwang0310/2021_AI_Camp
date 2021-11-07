@@ -3,13 +3,11 @@ import numpy as np
 from keras.preprocessing.image import img_to_array
 from keras.models import load_model
 
-# Face detection XML load and trained model loading
+# 얼굴 인식 및 감정 분류 Face detection XML load and trained model loading
 face_detection = cv2.CascadeClassifier('files/haarcascade_frontalface_default.xml')
 emotion_classifier = load_model('files/emotion_model.hdf5', compile=False)
-EMOTIONS = ["Angry", "Disgusting", "Fearful", "Happy", "Sad", "Surprising", "Neutral"]
 
-score = 0
-count = 0
+EMOTIONS = ["Angry", "Disgusting", "Fearful", "Happy", "Sad", "Surprising", "Neutral"]
 
 emotion_value_list = {
     "Angry": 0,
@@ -22,6 +20,10 @@ emotion_value_list = {
 }
 
 emotion_score = {"Angry": 5, "Disgusting": 0, "Fearful": 5, "Happy": 5, "Sad": 5, "Neutral": 0, "Surprising": 5}
+
+score = 0
+count = 0
+
 camera = cv2.VideoCapture(0)
 
 while True:
@@ -70,8 +72,9 @@ while True:
             cv2.putText(canvas, text, (10, (i * 35) + 23),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 2)
 
+            # if emotion
             if emotion == "Neutral":
-                if w > 300 and count % 2 == 0:
+                if w > 200 and count % 2 == 0:
                     score += emotion_score[emotion]
                     count += 1
             else:
@@ -79,8 +82,8 @@ while True:
                     score += emotion_score[emotion]
                     count += 1
 
-            print(f"emotion: {emotion}, prob: {prob}, w: {w}")
-            print(score)
+            print(f"Current Emotion: {emotion}, prob: {prob}, w: {w}")
+            print(f"Current Score: {score}")
 
             emotion_value_list[emotion] += prob * 100
 
